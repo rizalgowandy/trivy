@@ -6,22 +6,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
-	google_protobuf "github.com/golang/protobuf/ptypes/empty"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/aquasecurity/fanal/cache"
-	ftypes "github.com/aquasecurity/fanal/types"
-	deptypes "github.com/aquasecurity/go-dep-parser/pkg/types"
-	"github.com/aquasecurity/trivy-db/pkg/db"
 	dbTypes "github.com/aquasecurity/trivy-db/pkg/types"
 	"github.com/aquasecurity/trivy-db/pkg/utils"
-	"github.com/aquasecurity/trivy/pkg/dbtest"
-	"github.com/aquasecurity/trivy/pkg/report"
-	"github.com/aquasecurity/trivy/pkg/result"
+	"github.com/aquasecurity/trivy-db/pkg/vulnsrc/vulnerability"
+	"github.com/aquasecurity/trivy/pkg/cache"
+	ftypes "github.com/aquasecurity/trivy/pkg/fanal/types"
 	"github.com/aquasecurity/trivy/pkg/scanner"
 	"github.com/aquasecurity/trivy/pkg/types"
 	rpcCache "github.com/aquasecurity/trivy/rpc/cache"
@@ -40,15 +35,13 @@ func TestScanServer_Scan(t *testing.T) {
 	}
 	tests := []struct {
 		name            string
-		fixtures        []string
 		args            args
 		scanExpectation scanner.DriverScanExpectation
 		want            *rpcScanner.ScanResponse
 		wantErr         string
 	}{
 		{
-			name:     "happy path",
-			fixtures: []string{"testdata/fixtures/vulnerability.yaml"},
+			name: "happy path",
 			args: args{
 				in: &rpcScanner.ScanRequest{
 					Target:     "alpine:3.11",
@@ -59,12 +52,14 @@ func TestScanServer_Scan(t *testing.T) {
 			},
 			scanExpectation: scanner.DriverScanExpectation{
 				Args: scanner.DriverScanArgs{
-					Target:   "alpine:3.11",
-					ImageID:  "sha256:e7d92cdc71feacf90708cb59182d0df1b911f8ae022d29e8e95d75ca6a99776a",
-					LayerIDs: []string{"sha256:5216338b40a7b96416b8b9858974bbe4acc3096ee60acbc4dfb1ee02aecceb10"},
+					CtxAnything:     true,
+					Target:          "alpine:3.11",
+					ImageID:         "sha256:e7d92cdc71feacf90708cb59182d0df1b911f8ae022d29e8e95d75ca6a99776a",
+					LayerIDs:        []string{"sha256:5216338b40a7b96416b8b9858974bbe4acc3096ee60acbc4dfb1ee02aecceb10"},
+					OptionsAnything: true,
 				},
 				Returns: scanner.DriverScanReturns{
-					Results: report.Results{
+					Results: types.Results{
 						{
 							Target: "alpine:3.11 (alpine 3.11)",
 							Vulnerabilities: []types.DetectedVulnerability{
@@ -73,16 +68,29 @@ func TestScanServer_Scan(t *testing.T) {
 									PkgName:          "musl",
 									InstalledVersion: "1.2.3",
 									FixedVersion:     "1.2.4",
+									SeveritySource:   "nvd",
 									Vulnerability: dbTypes.Vulnerability{
+										Title:       "dos",
+										Description: "dos vulnerability",
+										Severity:    "MEDIUM",
+										VendorSeverity: map[dbTypes.SourceID]dbTypes.Severity{
+											vulnerability.NVD: dbTypes.SeverityMedium,
+										},
+										References:       []string{"http://example.com"},
 										LastModifiedDate: utils.MustTimeParse("2020-01-01T01:01:00Z"),
 										PublishedDate:    utils.MustTimeParse("2001-01-01T01:01:00Z"),
+									},
+									PrimaryURL: "https://avd.aquasec.com/nvd/cve-2019-0001",
+									DataSource: &dbTypes.DataSource{
+										Name: "DOS vulnerabilities",
+										URL:  "https://vuld-db-example.com/",
 									},
 								},
 							},
 							Type: "alpine",
 						},
 					},
-					OsFound: &ftypes.OS{
+					OsFound: ftypes.OS{
 						Family: "alpine",
 						Name:   "3.11",
 						Eosl:   true,
@@ -107,16 +115,23 @@ func TestScanServer_Scan(t *testing.T) {
 								Severity:         common.Severity_MEDIUM,
 								SeveritySource:   "nvd",
 								Layer:            &common.Layer{},
-								Cvss:             map[string]*common.CVSS{},
-								PrimaryUrl:       "https://avd.aquasec.com/nvd/cve-2019-0001",
-								Title:            "dos",
-								Description:      "dos vulnerability",
-								References:       []string{"http://example.com"},
-								LastModifiedDate: &timestamp.Timestamp{
+								Cvss:             make(map[string]*common.CVSS),
+								VendorSeverity: map[string]common.Severity{
+									string(vulnerability.NVD): common.Severity_MEDIUM,
+								},
+								PrimaryUrl:  "https://avd.aquasec.com/nvd/cve-2019-0001",
+								Title:       "dos",
+								Description: "dos vulnerability",
+								References:  []string{"http://example.com"},
+								LastModifiedDate: &timestamppb.Timestamp{
 									Seconds: 1577840460,
 								},
-								PublishedDate: &timestamp.Timestamp{
+								PublishedDate: &timestamppb.Timestamp{
 									Seconds: 978310860,
+								},
+								DataSource: &common.DataSource{
+									Name: "DOS vulnerabilities",
+									Url:  "https://vuld-db-example.com/",
 								},
 							},
 						},
@@ -137,9 +152,11 @@ func TestScanServer_Scan(t *testing.T) {
 			},
 			scanExpectation: scanner.DriverScanExpectation{
 				Args: scanner.DriverScanArgs{
-					Target:   "alpine:3.11",
-					ImageID:  "sha256:e7d92cdc71feacf90708cb59182d0df1b911f8ae022d29e8e95d75ca6a99776a",
-					LayerIDs: []string{"sha256:5216338b40a7b96416b8b9858974bbe4acc3096ee60acbc4dfb1ee02aecceb10"},
+					CtxAnything:     true,
+					Target:          "alpine:3.11",
+					ImageID:         "sha256:e7d92cdc71feacf90708cb59182d0df1b911f8ae022d29e8e95d75ca6a99776a",
+					LayerIDs:        []string{"sha256:5216338b40a7b96416b8b9858974bbe4acc3096ee60acbc4dfb1ee02aecceb10"},
+					OptionsAnything: true,
 				},
 				Returns: scanner.DriverScanReturns{
 					Err: errors.New("error"),
@@ -151,21 +168,16 @@ func TestScanServer_Scan(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dbtest.InitDB(t, tt.fixtures)
-			defer db.Close()
-
 			mockDriver := new(scanner.MockDriver)
 			mockDriver.ApplyScanExpectation(tt.scanExpectation)
 
-			s := NewScanServer(mockDriver, result.NewClient(db.Config{}))
+			s := NewScanServer(mockDriver)
 			got, err := s.Scan(context.Background(), tt.args.in)
 			if tt.wantErr != "" {
-				require.NotNil(t, err, tt.name)
-				assert.Contains(t, err.Error(), tt.wantErr, tt.name)
+				require.ErrorContains(t, err, tt.wantErr, tt.name)
 				return
-			} else {
-				assert.NoError(t, err, tt.name)
 			}
+			require.NoError(t, err, tt.name)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -179,7 +191,7 @@ func TestCacheServer_PutArtifact(t *testing.T) {
 		name     string
 		args     args
 		putImage cache.ArtifactCachePutArtifactExpectation
-		want     *google_protobuf.Empty
+		want     *emptypb.Empty
 		wantErr  string
 	}{
 		{
@@ -190,9 +202,9 @@ func TestCacheServer_PutArtifact(t *testing.T) {
 					ArtifactInfo: &rpcCache.ArtifactInfo{
 						SchemaVersion: 1,
 						Architecture:  "amd64",
-						Created: func() *timestamp.Timestamp {
+						Created: func() *timestamppb.Timestamp {
 							d := time.Date(2020, 1, 2, 3, 4, 5, 6, time.UTC)
-							t, _ := ptypes.TimestampProto(d)
+							t := timestamppb.New(d)
 							return t
 						}(),
 						DockerVersion: "18.09",
@@ -212,7 +224,7 @@ func TestCacheServer_PutArtifact(t *testing.T) {
 					},
 				},
 			},
-			want: &google_protobuf.Empty{},
+			want: &emptypb.Empty{},
 		},
 		{
 			name: "sad path",
@@ -221,9 +233,9 @@ func TestCacheServer_PutArtifact(t *testing.T) {
 					ArtifactId: "sha256:e7d92cdc71feacf90708cb59182d0df1b911f8ae022d29e8e95d75ca6a99776a",
 					ArtifactInfo: &rpcCache.ArtifactInfo{
 						SchemaVersion: 1,
-						Created: func() *timestamp.Timestamp {
+						Created: func() *timestamppb.Timestamp {
 							d := time.Date(2020, 1, 2, 3, 4, 5, 6, time.UTC)
-							t, _ := ptypes.TimestampProto(d)
+							t := timestamppb.New(d)
 							return t
 						}(),
 					},
@@ -260,11 +272,10 @@ func TestCacheServer_PutArtifact(t *testing.T) {
 			got, err := s.PutArtifact(context.Background(), tt.args.in)
 
 			if tt.wantErr != "" {
-				require.NotNil(t, err, tt.name)
-				assert.Contains(t, err.Error(), tt.wantErr, tt.name)
+				require.ErrorContains(t, err, tt.wantErr, tt.name)
 				return
 			} else {
-				assert.NoError(t, err, tt.name)
+				require.NoError(t, err, tt.name)
 			}
 
 			assert.Equal(t, tt.want, got)
@@ -280,7 +291,7 @@ func TestCacheServer_PutBlob(t *testing.T) {
 		name     string
 		args     args
 		putLayer cache.ArtifactCachePutBlobExpectation
-		want     *google_protobuf.Empty
+		want     *emptypb.Empty
 		wantErr  string
 	}{
 		{
@@ -310,6 +321,10 @@ func TestCacheServer_PutBlob(t *testing.T) {
 										SrcVersion: "1.2.3",
 										SrcRelease: "1",
 										SrcEpoch:   2,
+										Layer: &common.Layer{
+											Digest: "sha256:154ad0735c360b212b167f424d33a62305770a1fcfb6363882f5c436cfbd9812",
+											DiffId: "sha256:b2a1a2d80bf0c747a4f6b0ca6af5eef23f043fcdb1ed4f3a3e750aef2dc68079",
+										},
 									},
 									{
 										Name:       "vim-minimal",
@@ -321,6 +336,22 @@ func TestCacheServer_PutBlob(t *testing.T) {
 										SrcVersion: "7.4.160",
 										SrcRelease: "5.el7",
 										SrcEpoch:   2,
+										Layer: &common.Layer{
+											Digest: "sha256:154ad0735c360b212b167f424d33a62305770a1fcfb6363882f5c436cfbd9812",
+											DiffId: "sha256:b2a1a2d80bf0c747a4f6b0ca6af5eef23f043fcdb1ed4f3a3e750aef2dc68079",
+										},
+									},
+									{
+										Name:       "node-minimal",
+										Version:    "17.1.0",
+										Release:    "5.el7",
+										Epoch:      2,
+										Arch:       "x86_64",
+										SrcName:    "node",
+										SrcVersion: "17.1.0",
+										SrcRelease: "5.el7",
+										SrcEpoch:   2,
+										Layer:      nil,
 									},
 								},
 							},
@@ -329,7 +360,7 @@ func TestCacheServer_PutBlob(t *testing.T) {
 							{
 								Type:     "composer",
 								FilePath: "php-app/composer.lock",
-								Libraries: []*common.Library{
+								Packages: []*common.Package{
 									{
 										Name:    "guzzlehttp/guzzle",
 										Version: "6.2.0",
@@ -353,14 +384,14 @@ func TestCacheServer_PutBlob(t *testing.T) {
 						SchemaVersion: 1,
 						Digest:        "sha256:154ad0735c360b212b167f424d33a62305770a1fcfb6363882f5c436cfbd9812",
 						DiffID:        "sha256:b2a1a2d80bf0c747a4f6b0ca6af5eef23f043fcdb1ed4f3a3e750aef2dc68079",
-						OS: &ftypes.OS{
+						OS: ftypes.OS{
 							Family: "alpine",
 							Name:   "3.11",
 						},
 						PackageInfos: []ftypes.PackageInfo{
 							{
 								FilePath: "lib/apk/db/installed",
-								Packages: []ftypes.Package{
+								Packages: ftypes.Packages{
 									{
 										Name:       "binary",
 										Version:    "1.2.3",
@@ -371,6 +402,10 @@ func TestCacheServer_PutBlob(t *testing.T) {
 										SrcVersion: "1.2.3",
 										SrcRelease: "1",
 										SrcEpoch:   2,
+										Layer: ftypes.Layer{
+											Digest: "sha256:154ad0735c360b212b167f424d33a62305770a1fcfb6363882f5c436cfbd9812",
+											DiffID: "sha256:b2a1a2d80bf0c747a4f6b0ca6af5eef23f043fcdb1ed4f3a3e750aef2dc68079",
+										},
 									},
 									{
 										Name:       "vim-minimal",
@@ -382,6 +417,22 @@ func TestCacheServer_PutBlob(t *testing.T) {
 										SrcVersion: "7.4.160",
 										SrcRelease: "5.el7",
 										SrcEpoch:   2,
+										Layer: ftypes.Layer{
+											Digest: "sha256:154ad0735c360b212b167f424d33a62305770a1fcfb6363882f5c436cfbd9812",
+											DiffID: "sha256:b2a1a2d80bf0c747a4f6b0ca6af5eef23f043fcdb1ed4f3a3e750aef2dc68079",
+										},
+									},
+									{
+										Name:       "node-minimal",
+										Version:    "17.1.0",
+										Release:    "5.el7",
+										Epoch:      2,
+										Arch:       "x86_64",
+										SrcName:    "node",
+										SrcVersion: "17.1.0",
+										SrcRelease: "5.el7",
+										SrcEpoch:   2,
+										Layer:      ftypes.Layer{},
 									},
 								},
 							},
@@ -390,18 +441,14 @@ func TestCacheServer_PutBlob(t *testing.T) {
 							{
 								Type:     "composer",
 								FilePath: "php-app/composer.lock",
-								Libraries: []ftypes.LibraryInfo{
+								Packages: ftypes.Packages{
 									{
-										Library: deptypes.Library{
-											Name:    "guzzlehttp/guzzle",
-											Version: "6.2.0",
-										},
+										Name:    "guzzlehttp/guzzle",
+										Version: "6.2.0",
 									},
 									{
-										Library: deptypes.Library{
-											Name:    "guzzlehttp/promises",
-											Version: "v1.3.1",
-										},
+										Name:    "guzzlehttp/promises",
+										Version: "v1.3.1",
 									},
 								},
 							},
@@ -411,7 +458,7 @@ func TestCacheServer_PutBlob(t *testing.T) {
 					},
 				},
 			},
-			want: &google_protobuf.Empty{},
+			want: &emptypb.Empty{},
 		},
 		{
 			name: "sad path",
@@ -459,11 +506,10 @@ func TestCacheServer_PutBlob(t *testing.T) {
 			got, err := s.PutBlob(context.Background(), tt.args.in)
 
 			if tt.wantErr != "" {
-				require.NotNil(t, err, tt.name)
-				assert.Contains(t, err.Error(), tt.wantErr, tt.name)
+				require.ErrorContains(t, err, tt.wantErr, tt.name)
 				return
 			} else {
-				assert.NoError(t, err, tt.name)
+				require.NoError(t, err, tt.name)
 			}
 
 			assert.Equal(t, tt.want, got)
@@ -496,10 +542,18 @@ func TestCacheServer_MissingBlobs(t *testing.T) {
 			},
 			getArtifactCacheMissingBlobsExpectations: []cache.ArtifactCacheMissingBlobsExpectation{
 				{
-					Args: cache.ArtifactCacheMissingBlobsArgs{ArtifactID: "sha256:e7d92cdc71feacf90708cb59182d0df1b911f8ae022d29e8e95d75ca6a99776a",
-						BlobIDs: []string{"sha256:932da51564135c98a49a34a193d6cd363d8fa4184d957fde16c9d8527b3f3b02", "sha256:dffd9992ca398466a663c87c92cfea2a2db0ae0cf33fcb99da60eec52addbfc5"}},
+					Args: cache.ArtifactCacheMissingBlobsArgs{
+						ArtifactID: "sha256:e7d92cdc71feacf90708cb59182d0df1b911f8ae022d29e8e95d75ca6a99776a",
+						BlobIDs: []string{
+							"sha256:932da51564135c98a49a34a193d6cd363d8fa4184d957fde16c9d8527b3f3b02",
+							"sha256:dffd9992ca398466a663c87c92cfea2a2db0ae0cf33fcb99da60eec52addbfc5",
+						},
+					},
 					Returns: cache.ArtifactCacheMissingBlobsReturns{
-						MissingArtifact: false, MissingBlobIDs: []string{"sha256:dffd9992ca398466a663c87c92cfea2a2db0ae0cf33fcb99da60eec52addbfc5"}, Err: nil},
+						MissingArtifact: false,
+						MissingBlobIDs:  []string{"sha256:dffd9992ca398466a663c87c92cfea2a2db0ae0cf33fcb99da60eec52addbfc5"},
+						Err:             nil,
+					},
 				},
 			},
 			want: &rpcCache.MissingBlobsResponse{
@@ -516,11 +570,10 @@ func TestCacheServer_MissingBlobs(t *testing.T) {
 			s := NewCacheServer(mockCache)
 			got, err := s.MissingBlobs(tt.args.ctx, tt.args.in)
 			if tt.wantErr != "" {
-				require.NotNil(t, err, tt.name)
-				assert.Contains(t, err.Error(), tt.wantErr, tt.name)
+				require.ErrorContains(t, err, tt.wantErr, tt.name)
 				return
 			} else {
-				assert.NoError(t, err, tt.name)
+				require.NoError(t, err, tt.name)
 			}
 
 			assert.Equal(t, tt.want, got)
