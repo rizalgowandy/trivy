@@ -16,7 +16,7 @@ import proto "google.golang.org/protobuf/proto"
 import twirp "github.com/twitchtv/twirp"
 import ctxsetters "github.com/twitchtv/twirp/ctxsetters"
 
-import google_protobuf1 "google.golang.org/protobuf/types/known/emptypb"
+import google_protobuf2 "google.golang.org/protobuf/types/known/emptypb"
 
 import bytes "bytes"
 import errors "errors"
@@ -35,11 +35,13 @@ const _ = twirp.TwirpPackageMinVersion_8_1_0
 // ===============
 
 type Cache interface {
-	PutArtifact(context.Context, *PutArtifactRequest) (*google_protobuf1.Empty, error)
+	PutArtifact(context.Context, *PutArtifactRequest) (*google_protobuf2.Empty, error)
 
-	PutBlob(context.Context, *PutBlobRequest) (*google_protobuf1.Empty, error)
+	PutBlob(context.Context, *PutBlobRequest) (*google_protobuf2.Empty, error)
 
 	MissingBlobs(context.Context, *MissingBlobsRequest) (*MissingBlobsResponse, error)
+
+	DeleteBlobs(context.Context, *DeleteBlobsRequest) (*google_protobuf2.Empty, error)
 }
 
 // =====================
@@ -48,7 +50,7 @@ type Cache interface {
 
 type cacheProtobufClient struct {
 	client      HTTPClient
-	urls        [3]string
+	urls        [4]string
 	interceptor twirp.Interceptor
 	opts        twirp.ClientOptions
 }
@@ -76,10 +78,11 @@ func NewCacheProtobufClient(baseURL string, client HTTPClient, opts ...twirp.Cli
 	// Build method URLs: <baseURL>[<prefix>]/<package>.<Service>/<Method>
 	serviceURL := sanitizeBaseURL(baseURL)
 	serviceURL += baseServicePath(pathPrefix, "trivy.cache.v1", "Cache")
-	urls := [3]string{
+	urls := [4]string{
 		serviceURL + "PutArtifact",
 		serviceURL + "PutBlob",
 		serviceURL + "MissingBlobs",
+		serviceURL + "DeleteBlobs",
 	}
 
 	return &cacheProtobufClient{
@@ -90,13 +93,13 @@ func NewCacheProtobufClient(baseURL string, client HTTPClient, opts ...twirp.Cli
 	}
 }
 
-func (c *cacheProtobufClient) PutArtifact(ctx context.Context, in *PutArtifactRequest) (*google_protobuf1.Empty, error) {
+func (c *cacheProtobufClient) PutArtifact(ctx context.Context, in *PutArtifactRequest) (*google_protobuf2.Empty, error) {
 	ctx = ctxsetters.WithPackageName(ctx, "trivy.cache.v1")
 	ctx = ctxsetters.WithServiceName(ctx, "Cache")
 	ctx = ctxsetters.WithMethodName(ctx, "PutArtifact")
 	caller := c.callPutArtifact
 	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *PutArtifactRequest) (*google_protobuf1.Empty, error) {
+		caller = func(ctx context.Context, req *PutArtifactRequest) (*google_protobuf2.Empty, error) {
 			resp, err := c.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
 					typedReq, ok := req.(*PutArtifactRequest)
@@ -107,9 +110,9 @@ func (c *cacheProtobufClient) PutArtifact(ctx context.Context, in *PutArtifactRe
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*google_protobuf1.Empty)
+				typedResp, ok := resp.(*google_protobuf2.Empty)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf1.Empty) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -119,8 +122,8 @@ func (c *cacheProtobufClient) PutArtifact(ctx context.Context, in *PutArtifactRe
 	return caller(ctx, in)
 }
 
-func (c *cacheProtobufClient) callPutArtifact(ctx context.Context, in *PutArtifactRequest) (*google_protobuf1.Empty, error) {
-	out := new(google_protobuf1.Empty)
+func (c *cacheProtobufClient) callPutArtifact(ctx context.Context, in *PutArtifactRequest) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
 	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[0], in, out)
 	if err != nil {
 		twerr, ok := err.(twirp.Error)
@@ -136,13 +139,13 @@ func (c *cacheProtobufClient) callPutArtifact(ctx context.Context, in *PutArtifa
 	return out, nil
 }
 
-func (c *cacheProtobufClient) PutBlob(ctx context.Context, in *PutBlobRequest) (*google_protobuf1.Empty, error) {
+func (c *cacheProtobufClient) PutBlob(ctx context.Context, in *PutBlobRequest) (*google_protobuf2.Empty, error) {
 	ctx = ctxsetters.WithPackageName(ctx, "trivy.cache.v1")
 	ctx = ctxsetters.WithServiceName(ctx, "Cache")
 	ctx = ctxsetters.WithMethodName(ctx, "PutBlob")
 	caller := c.callPutBlob
 	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *PutBlobRequest) (*google_protobuf1.Empty, error) {
+		caller = func(ctx context.Context, req *PutBlobRequest) (*google_protobuf2.Empty, error) {
 			resp, err := c.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
 					typedReq, ok := req.(*PutBlobRequest)
@@ -153,9 +156,9 @@ func (c *cacheProtobufClient) PutBlob(ctx context.Context, in *PutBlobRequest) (
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*google_protobuf1.Empty)
+				typedResp, ok := resp.(*google_protobuf2.Empty)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf1.Empty) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -165,8 +168,8 @@ func (c *cacheProtobufClient) PutBlob(ctx context.Context, in *PutBlobRequest) (
 	return caller(ctx, in)
 }
 
-func (c *cacheProtobufClient) callPutBlob(ctx context.Context, in *PutBlobRequest) (*google_protobuf1.Empty, error) {
-	out := new(google_protobuf1.Empty)
+func (c *cacheProtobufClient) callPutBlob(ctx context.Context, in *PutBlobRequest) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
 	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[1], in, out)
 	if err != nil {
 		twerr, ok := err.(twirp.Error)
@@ -228,13 +231,59 @@ func (c *cacheProtobufClient) callMissingBlobs(ctx context.Context, in *MissingB
 	return out, nil
 }
 
+func (c *cacheProtobufClient) DeleteBlobs(ctx context.Context, in *DeleteBlobsRequest) (*google_protobuf2.Empty, error) {
+	ctx = ctxsetters.WithPackageName(ctx, "trivy.cache.v1")
+	ctx = ctxsetters.WithServiceName(ctx, "Cache")
+	ctx = ctxsetters.WithMethodName(ctx, "DeleteBlobs")
+	caller := c.callDeleteBlobs
+	if c.interceptor != nil {
+		caller = func(ctx context.Context, req *DeleteBlobsRequest) (*google_protobuf2.Empty, error) {
+			resp, err := c.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*DeleteBlobsRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*DeleteBlobsRequest) when calling interceptor")
+					}
+					return c.callDeleteBlobs(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*google_protobuf2.Empty)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+	return caller(ctx, in)
+}
+
+func (c *cacheProtobufClient) callDeleteBlobs(ctx context.Context, in *DeleteBlobsRequest) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
+	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[3], in, out)
+	if err != nil {
+		twerr, ok := err.(twirp.Error)
+		if !ok {
+			twerr = twirp.InternalErrorWith(err)
+		}
+		callClientError(ctx, c.opts.Hooks, twerr)
+		return nil, err
+	}
+
+	callClientResponseReceived(ctx, c.opts.Hooks)
+
+	return out, nil
+}
+
 // =================
 // Cache JSON Client
 // =================
 
 type cacheJSONClient struct {
 	client      HTTPClient
-	urls        [3]string
+	urls        [4]string
 	interceptor twirp.Interceptor
 	opts        twirp.ClientOptions
 }
@@ -262,10 +311,11 @@ func NewCacheJSONClient(baseURL string, client HTTPClient, opts ...twirp.ClientO
 	// Build method URLs: <baseURL>[<prefix>]/<package>.<Service>/<Method>
 	serviceURL := sanitizeBaseURL(baseURL)
 	serviceURL += baseServicePath(pathPrefix, "trivy.cache.v1", "Cache")
-	urls := [3]string{
+	urls := [4]string{
 		serviceURL + "PutArtifact",
 		serviceURL + "PutBlob",
 		serviceURL + "MissingBlobs",
+		serviceURL + "DeleteBlobs",
 	}
 
 	return &cacheJSONClient{
@@ -276,13 +326,13 @@ func NewCacheJSONClient(baseURL string, client HTTPClient, opts ...twirp.ClientO
 	}
 }
 
-func (c *cacheJSONClient) PutArtifact(ctx context.Context, in *PutArtifactRequest) (*google_protobuf1.Empty, error) {
+func (c *cacheJSONClient) PutArtifact(ctx context.Context, in *PutArtifactRequest) (*google_protobuf2.Empty, error) {
 	ctx = ctxsetters.WithPackageName(ctx, "trivy.cache.v1")
 	ctx = ctxsetters.WithServiceName(ctx, "Cache")
 	ctx = ctxsetters.WithMethodName(ctx, "PutArtifact")
 	caller := c.callPutArtifact
 	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *PutArtifactRequest) (*google_protobuf1.Empty, error) {
+		caller = func(ctx context.Context, req *PutArtifactRequest) (*google_protobuf2.Empty, error) {
 			resp, err := c.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
 					typedReq, ok := req.(*PutArtifactRequest)
@@ -293,9 +343,9 @@ func (c *cacheJSONClient) PutArtifact(ctx context.Context, in *PutArtifactReques
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*google_protobuf1.Empty)
+				typedResp, ok := resp.(*google_protobuf2.Empty)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf1.Empty) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -305,8 +355,8 @@ func (c *cacheJSONClient) PutArtifact(ctx context.Context, in *PutArtifactReques
 	return caller(ctx, in)
 }
 
-func (c *cacheJSONClient) callPutArtifact(ctx context.Context, in *PutArtifactRequest) (*google_protobuf1.Empty, error) {
-	out := new(google_protobuf1.Empty)
+func (c *cacheJSONClient) callPutArtifact(ctx context.Context, in *PutArtifactRequest) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
 	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[0], in, out)
 	if err != nil {
 		twerr, ok := err.(twirp.Error)
@@ -322,13 +372,13 @@ func (c *cacheJSONClient) callPutArtifact(ctx context.Context, in *PutArtifactRe
 	return out, nil
 }
 
-func (c *cacheJSONClient) PutBlob(ctx context.Context, in *PutBlobRequest) (*google_protobuf1.Empty, error) {
+func (c *cacheJSONClient) PutBlob(ctx context.Context, in *PutBlobRequest) (*google_protobuf2.Empty, error) {
 	ctx = ctxsetters.WithPackageName(ctx, "trivy.cache.v1")
 	ctx = ctxsetters.WithServiceName(ctx, "Cache")
 	ctx = ctxsetters.WithMethodName(ctx, "PutBlob")
 	caller := c.callPutBlob
 	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *PutBlobRequest) (*google_protobuf1.Empty, error) {
+		caller = func(ctx context.Context, req *PutBlobRequest) (*google_protobuf2.Empty, error) {
 			resp, err := c.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
 					typedReq, ok := req.(*PutBlobRequest)
@@ -339,9 +389,9 @@ func (c *cacheJSONClient) PutBlob(ctx context.Context, in *PutBlobRequest) (*goo
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*google_protobuf1.Empty)
+				typedResp, ok := resp.(*google_protobuf2.Empty)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf1.Empty) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -351,8 +401,8 @@ func (c *cacheJSONClient) PutBlob(ctx context.Context, in *PutBlobRequest) (*goo
 	return caller(ctx, in)
 }
 
-func (c *cacheJSONClient) callPutBlob(ctx context.Context, in *PutBlobRequest) (*google_protobuf1.Empty, error) {
-	out := new(google_protobuf1.Empty)
+func (c *cacheJSONClient) callPutBlob(ctx context.Context, in *PutBlobRequest) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
 	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[1], in, out)
 	if err != nil {
 		twerr, ok := err.(twirp.Error)
@@ -400,6 +450,52 @@ func (c *cacheJSONClient) MissingBlobs(ctx context.Context, in *MissingBlobsRequ
 func (c *cacheJSONClient) callMissingBlobs(ctx context.Context, in *MissingBlobsRequest) (*MissingBlobsResponse, error) {
 	out := new(MissingBlobsResponse)
 	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[2], in, out)
+	if err != nil {
+		twerr, ok := err.(twirp.Error)
+		if !ok {
+			twerr = twirp.InternalErrorWith(err)
+		}
+		callClientError(ctx, c.opts.Hooks, twerr)
+		return nil, err
+	}
+
+	callClientResponseReceived(ctx, c.opts.Hooks)
+
+	return out, nil
+}
+
+func (c *cacheJSONClient) DeleteBlobs(ctx context.Context, in *DeleteBlobsRequest) (*google_protobuf2.Empty, error) {
+	ctx = ctxsetters.WithPackageName(ctx, "trivy.cache.v1")
+	ctx = ctxsetters.WithServiceName(ctx, "Cache")
+	ctx = ctxsetters.WithMethodName(ctx, "DeleteBlobs")
+	caller := c.callDeleteBlobs
+	if c.interceptor != nil {
+		caller = func(ctx context.Context, req *DeleteBlobsRequest) (*google_protobuf2.Empty, error) {
+			resp, err := c.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*DeleteBlobsRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*DeleteBlobsRequest) when calling interceptor")
+					}
+					return c.callDeleteBlobs(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*google_protobuf2.Empty)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+	return caller(ctx, in)
+}
+
+func (c *cacheJSONClient) callDeleteBlobs(ctx context.Context, in *DeleteBlobsRequest) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
+	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[3], in, out)
 	if err != nil {
 		twerr, ok := err.(twirp.Error)
 		if !ok {
@@ -520,6 +616,9 @@ func (s *cacheServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	case "MissingBlobs":
 		s.serveMissingBlobs(ctx, resp, req)
 		return
+	case "DeleteBlobs":
+		s.serveDeleteBlobs(ctx, resp, req)
+		return
 	default:
 		msg := fmt.Sprintf("no handler for path %q", req.URL.Path)
 		s.writeError(ctx, resp, badRouteError(msg, req.Method, req.URL.Path))
@@ -569,7 +668,7 @@ func (s *cacheServer) servePutArtifactJSON(ctx context.Context, resp http.Respon
 
 	handler := s.Cache.PutArtifact
 	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *PutArtifactRequest) (*google_protobuf1.Empty, error) {
+		handler = func(ctx context.Context, req *PutArtifactRequest) (*google_protobuf2.Empty, error) {
 			resp, err := s.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
 					typedReq, ok := req.(*PutArtifactRequest)
@@ -580,9 +679,9 @@ func (s *cacheServer) servePutArtifactJSON(ctx context.Context, resp http.Respon
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*google_protobuf1.Empty)
+				typedResp, ok := resp.(*google_protobuf2.Empty)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf1.Empty) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -591,7 +690,7 @@ func (s *cacheServer) servePutArtifactJSON(ctx context.Context, resp http.Respon
 	}
 
 	// Call service method
-	var respContent *google_protobuf1.Empty
+	var respContent *google_protobuf2.Empty
 	func() {
 		defer ensurePanicResponses(ctx, resp, s.hooks)
 		respContent, err = handler(ctx, reqContent)
@@ -602,7 +701,7 @@ func (s *cacheServer) servePutArtifactJSON(ctx context.Context, resp http.Respon
 		return
 	}
 	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf1.Empty and nil error while calling PutArtifact. nil responses are not supported"))
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf2.Empty and nil error while calling PutArtifact. nil responses are not supported"))
 		return
 	}
 
@@ -650,7 +749,7 @@ func (s *cacheServer) servePutArtifactProtobuf(ctx context.Context, resp http.Re
 
 	handler := s.Cache.PutArtifact
 	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *PutArtifactRequest) (*google_protobuf1.Empty, error) {
+		handler = func(ctx context.Context, req *PutArtifactRequest) (*google_protobuf2.Empty, error) {
 			resp, err := s.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
 					typedReq, ok := req.(*PutArtifactRequest)
@@ -661,9 +760,9 @@ func (s *cacheServer) servePutArtifactProtobuf(ctx context.Context, resp http.Re
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*google_protobuf1.Empty)
+				typedResp, ok := resp.(*google_protobuf2.Empty)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf1.Empty) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -672,7 +771,7 @@ func (s *cacheServer) servePutArtifactProtobuf(ctx context.Context, resp http.Re
 	}
 
 	// Call service method
-	var respContent *google_protobuf1.Empty
+	var respContent *google_protobuf2.Empty
 	func() {
 		defer ensurePanicResponses(ctx, resp, s.hooks)
 		respContent, err = handler(ctx, reqContent)
@@ -683,7 +782,7 @@ func (s *cacheServer) servePutArtifactProtobuf(ctx context.Context, resp http.Re
 		return
 	}
 	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf1.Empty and nil error while calling PutArtifact. nil responses are not supported"))
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf2.Empty and nil error while calling PutArtifact. nil responses are not supported"))
 		return
 	}
 
@@ -749,7 +848,7 @@ func (s *cacheServer) servePutBlobJSON(ctx context.Context, resp http.ResponseWr
 
 	handler := s.Cache.PutBlob
 	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *PutBlobRequest) (*google_protobuf1.Empty, error) {
+		handler = func(ctx context.Context, req *PutBlobRequest) (*google_protobuf2.Empty, error) {
 			resp, err := s.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
 					typedReq, ok := req.(*PutBlobRequest)
@@ -760,9 +859,9 @@ func (s *cacheServer) servePutBlobJSON(ctx context.Context, resp http.ResponseWr
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*google_protobuf1.Empty)
+				typedResp, ok := resp.(*google_protobuf2.Empty)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf1.Empty) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -771,7 +870,7 @@ func (s *cacheServer) servePutBlobJSON(ctx context.Context, resp http.ResponseWr
 	}
 
 	// Call service method
-	var respContent *google_protobuf1.Empty
+	var respContent *google_protobuf2.Empty
 	func() {
 		defer ensurePanicResponses(ctx, resp, s.hooks)
 		respContent, err = handler(ctx, reqContent)
@@ -782,7 +881,7 @@ func (s *cacheServer) servePutBlobJSON(ctx context.Context, resp http.ResponseWr
 		return
 	}
 	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf1.Empty and nil error while calling PutBlob. nil responses are not supported"))
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf2.Empty and nil error while calling PutBlob. nil responses are not supported"))
 		return
 	}
 
@@ -830,7 +929,7 @@ func (s *cacheServer) servePutBlobProtobuf(ctx context.Context, resp http.Respon
 
 	handler := s.Cache.PutBlob
 	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *PutBlobRequest) (*google_protobuf1.Empty, error) {
+		handler = func(ctx context.Context, req *PutBlobRequest) (*google_protobuf2.Empty, error) {
 			resp, err := s.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
 					typedReq, ok := req.(*PutBlobRequest)
@@ -841,9 +940,9 @@ func (s *cacheServer) servePutBlobProtobuf(ctx context.Context, resp http.Respon
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*google_protobuf1.Empty)
+				typedResp, ok := resp.(*google_protobuf2.Empty)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf1.Empty) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -852,7 +951,7 @@ func (s *cacheServer) servePutBlobProtobuf(ctx context.Context, resp http.Respon
 	}
 
 	// Call service method
-	var respContent *google_protobuf1.Empty
+	var respContent *google_protobuf2.Empty
 	func() {
 		defer ensurePanicResponses(ctx, resp, s.hooks)
 		respContent, err = handler(ctx, reqContent)
@@ -863,7 +962,7 @@ func (s *cacheServer) servePutBlobProtobuf(ctx context.Context, resp http.Respon
 		return
 	}
 	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf1.Empty and nil error while calling PutBlob. nil responses are not supported"))
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf2.Empty and nil error while calling PutBlob. nil responses are not supported"))
 		return
 	}
 
@@ -1067,6 +1166,186 @@ func (s *cacheServer) serveMissingBlobsProtobuf(ctx context.Context, resp http.R
 	callResponseSent(ctx, s.hooks)
 }
 
+func (s *cacheServer) serveDeleteBlobs(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+	header := req.Header.Get("Content-Type")
+	i := strings.Index(header, ";")
+	if i == -1 {
+		i = len(header)
+	}
+	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	case "application/json":
+		s.serveDeleteBlobsJSON(ctx, resp, req)
+	case "application/protobuf":
+		s.serveDeleteBlobsProtobuf(ctx, resp, req)
+	default:
+		msg := fmt.Sprintf("unexpected Content-Type: %q", req.Header.Get("Content-Type"))
+		twerr := badRouteError(msg, req.Method, req.URL.Path)
+		s.writeError(ctx, resp, twerr)
+	}
+}
+
+func (s *cacheServer) serveDeleteBlobsJSON(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+	var err error
+	ctx = ctxsetters.WithMethodName(ctx, "DeleteBlobs")
+	ctx, err = callRequestRouted(ctx, s.hooks)
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+
+	d := json.NewDecoder(req.Body)
+	rawReqBody := json.RawMessage{}
+	if err := d.Decode(&rawReqBody); err != nil {
+		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
+		return
+	}
+	reqContent := new(DeleteBlobsRequest)
+	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
+	if err = unmarshaler.Unmarshal(rawReqBody, reqContent); err != nil {
+		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
+		return
+	}
+
+	handler := s.Cache.DeleteBlobs
+	if s.interceptor != nil {
+		handler = func(ctx context.Context, req *DeleteBlobsRequest) (*google_protobuf2.Empty, error) {
+			resp, err := s.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*DeleteBlobsRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*DeleteBlobsRequest) when calling interceptor")
+					}
+					return s.Cache.DeleteBlobs(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*google_protobuf2.Empty)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+
+	// Call service method
+	var respContent *google_protobuf2.Empty
+	func() {
+		defer ensurePanicResponses(ctx, resp, s.hooks)
+		respContent, err = handler(ctx, reqContent)
+	}()
+
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+	if respContent == nil {
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf2.Empty and nil error while calling DeleteBlobs. nil responses are not supported"))
+		return
+	}
+
+	ctx = callResponsePrepared(ctx, s.hooks)
+
+	marshaler := &protojson.MarshalOptions{UseProtoNames: !s.jsonCamelCase, EmitUnpopulated: !s.jsonSkipDefaults}
+	respBytes, err := marshaler.Marshal(respContent)
+	if err != nil {
+		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal json response"))
+		return
+	}
+
+	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
+	resp.Header().Set("Content-Type", "application/json")
+	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
+	resp.WriteHeader(http.StatusOK)
+
+	if n, err := resp.Write(respBytes); err != nil {
+		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
+		twerr := twirp.NewError(twirp.Unknown, msg)
+		ctx = callError(ctx, s.hooks, twerr)
+	}
+	callResponseSent(ctx, s.hooks)
+}
+
+func (s *cacheServer) serveDeleteBlobsProtobuf(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+	var err error
+	ctx = ctxsetters.WithMethodName(ctx, "DeleteBlobs")
+	ctx, err = callRequestRouted(ctx, s.hooks)
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+
+	buf, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		s.handleRequestBodyError(ctx, resp, "failed to read request body", err)
+		return
+	}
+	reqContent := new(DeleteBlobsRequest)
+	if err = proto.Unmarshal(buf, reqContent); err != nil {
+		s.writeError(ctx, resp, malformedRequestError("the protobuf request could not be decoded"))
+		return
+	}
+
+	handler := s.Cache.DeleteBlobs
+	if s.interceptor != nil {
+		handler = func(ctx context.Context, req *DeleteBlobsRequest) (*google_protobuf2.Empty, error) {
+			resp, err := s.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*DeleteBlobsRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*DeleteBlobsRequest) when calling interceptor")
+					}
+					return s.Cache.DeleteBlobs(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*google_protobuf2.Empty)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*google_protobuf2.Empty) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+
+	// Call service method
+	var respContent *google_protobuf2.Empty
+	func() {
+		defer ensurePanicResponses(ctx, resp, s.hooks)
+		respContent, err = handler(ctx, reqContent)
+	}()
+
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+	if respContent == nil {
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *google_protobuf2.Empty and nil error while calling DeleteBlobs. nil responses are not supported"))
+		return
+	}
+
+	ctx = callResponsePrepared(ctx, s.hooks)
+
+	respBytes, err := proto.Marshal(respContent)
+	if err != nil {
+		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal proto response"))
+		return
+	}
+
+	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
+	resp.Header().Set("Content-Type", "application/protobuf")
+	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
+	resp.WriteHeader(http.StatusOK)
+	if n, err := resp.Write(respBytes); err != nil {
+		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
+		twerr := twirp.NewError(twirp.Unknown, msg)
+		ctx = callError(ctx, s.hooks, twerr)
+	}
+	callResponseSent(ctx, s.hooks)
+}
+
 func (s *cacheServer) ServiceDescriptor() ([]byte, int) {
 	return twirpFileDescriptor0, 0
 }
@@ -1205,9 +1484,12 @@ func sanitizeBaseURL(baseURL string) string {
 
 // baseServicePath composes the path prefix for the service (without <Method>).
 // e.g.: baseServicePath("/twirp", "my.pkg", "MyService")
-//       returns => "/twirp/my.pkg.MyService/"
+//
+//	returns => "/twirp/my.pkg.MyService/"
+//
 // e.g.: baseServicePath("", "", "MyService")
-//       returns => "/MyService/"
+//
+//	returns => "/MyService/"
 func baseServicePath(prefix, pkg, service string) string {
 	fullServiceName := service
 	if pkg != "" {
@@ -1651,50 +1933,58 @@ func callClientError(ctx context.Context, h *twirp.ClientHooks, err twirp.Error)
 }
 
 var twirpFileDescriptor0 = []byte{
-	// 717 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xed, 0x6e, 0xd3, 0x3c,
-	0x18, 0x55, 0xdb, 0x6d, 0x6d, 0x9f, 0x7e, 0x6c, 0xaf, 0xdf, 0xf7, 0xdd, 0xb2, 0x82, 0xb6, 0x2a,
-	0x80, 0x54, 0x7e, 0x90, 0x88, 0xf2, 0xf1, 0x07, 0x81, 0xe8, 0x06, 0x48, 0x95, 0x98, 0x28, 0x01,
-	0x21, 0xc1, 0x9f, 0x92, 0x3a, 0x4e, 0x6b, 0xad, 0x89, 0x33, 0xdb, 0x29, 0xf4, 0x0e, 0xb8, 0x05,
-	0xee, 0x92, 0x4b, 0x40, 0xb6, 0x93, 0xf5, 0x63, 0x65, 0x1a, 0x7f, 0xaa, 0xf8, 0x3c, 0x8f, 0x8f,
-	0x8f, 0xcf, 0x79, 0x6a, 0x38, 0xe0, 0x09, 0x76, 0xb1, 0x8f, 0x27, 0xc4, 0x15, 0x84, 0xcf, 0x28,
-	0x26, 0x4e, 0xc2, 0x99, 0x64, 0xa8, 0x29, 0x39, 0x9d, 0xcd, 0x1d, 0x5d, 0x72, 0x66, 0x0f, 0x5b,
-	0xc7, 0x63, 0xc6, 0xc6, 0x53, 0xe2, 0xea, 0xea, 0x28, 0x0d, 0x5d, 0x49, 0x23, 0x22, 0xa4, 0x1f,
-	0x25, 0x66, 0x43, 0xeb, 0xe9, 0x98, 0xca, 0x49, 0x3a, 0x72, 0x30, 0x8b, 0x5c, 0xff, 0x22, 0xf5,
-	0x05, 0xc1, 0x29, 0xa7, 0x72, 0xee, 0x6a, 0x22, 0x57, 0x9f, 0xc3, 0xa2, 0x88, 0xc5, 0xab, 0x07,
-	0xb5, 0x6e, 0xad, 0x13, 0x93, 0x28, 0x91, 0x73, 0x53, 0xb4, 0x7f, 0x14, 0xa1, 0xde, 0xe3, 0x92,
-	0x86, 0x3e, 0x96, 0xfd, 0x38, 0x64, 0xe8, 0x1e, 0x34, 0x05, 0x9e, 0x90, 0xc8, 0x1f, 0xce, 0x08,
-	0x17, 0x94, 0xc5, 0x56, 0xa1, 0x5d, 0xe8, 0x6c, 0x7b, 0x0d, 0x83, 0x7e, 0x32, 0x20, 0xb2, 0xa1,
-	0xee, 0x73, 0x3c, 0xa1, 0x92, 0x60, 0x99, 0x72, 0x62, 0x15, 0xdb, 0x85, 0x4e, 0xd5, 0x5b, 0xc1,
-	0xd0, 0x63, 0x28, 0x63, 0x4e, 0x7c, 0x49, 0x02, 0xab, 0xd4, 0x2e, 0x74, 0x6a, 0xdd, 0x96, 0x63,
-	0xa4, 0x38, 0xb9, 0x14, 0xe7, 0x63, 0x7e, 0x47, 0x2f, 0x6f, 0x55, 0x02, 0x02, 0x86, 0xcf, 0x09,
-	0xbf, 0x14, 0xb0, 0xa5, 0xb9, 0x1b, 0x06, 0xcd, 0x05, 0x34, 0xa1, 0xc8, 0x84, 0xb5, 0xad, 0x4b,
-	0x45, 0x26, 0xd0, 0x4b, 0xd8, 0x9b, 0x50, 0x21, 0x19, 0x9f, 0x0f, 0x13, 0x1f, 0x9f, 0xfb, 0x63,
-	0x22, 0xac, 0x9d, 0x76, 0xa9, 0x53, 0xeb, 0xfe, 0xef, 0x64, 0x4e, 0x6b, 0x73, 0x9c, 0x81, 0xa9,
-	0x7a, 0xbb, 0x59, 0x7b, 0xb6, 0x16, 0xf6, 0x77, 0x40, 0x83, 0x54, 0xe6, 0x66, 0x78, 0xe4, 0x22,
-	0x25, 0x42, 0xa2, 0x63, 0xa8, 0xf9, 0x19, 0x34, 0xa4, 0x81, 0x36, 0xa3, 0xea, 0x41, 0x0e, 0xf5,
-	0x03, 0xd4, 0x83, 0xc6, 0xa2, 0x21, 0x0e, 0x99, 0xb6, 0xa2, 0xd6, 0xbd, 0xed, 0xac, 0xe6, 0xeb,
-	0x2c, 0xbb, 0xac, 0x8c, 0x5a, 0xac, 0xec, 0x9f, 0x25, 0xa8, 0x9c, 0x4c, 0xd9, 0xe8, 0x6f, 0x02,
-	0x68, 0xeb, 0xfb, 0x9b, 0xb3, 0xf6, 0x56, 0x6f, 0xf8, 0xee, 0x83, 0x76, 0xe4, 0x05, 0x34, 0x32,
-	0x27, 0xb4, 0x2e, 0x61, 0x95, 0xb4, 0x1d, 0x87, 0x1b, 0xed, 0x30, 0xaa, 0x92, 0xc5, 0x42, 0xa0,
-	0xe7, 0x50, 0xf7, 0x93, 0x64, 0x4a, 0xb1, 0x2f, 0x29, 0x8b, 0x85, 0xb5, 0xb5, 0x69, 0x7b, 0x6f,
-	0xd1, 0xe1, 0xad, 0xb4, 0xa3, 0xb7, 0xf0, 0x4f, 0x44, 0x05, 0x66, 0x71, 0x48, 0xc7, 0x29, 0xcf,
-	0x38, 0xaa, 0x9a, 0xe3, 0x68, 0x95, 0xe3, 0x6c, 0xad, 0xcd, 0xbb, 0xba, 0x51, 0xc5, 0xc0, 0x12,
-	0xff, 0x22, 0x25, 0xc3, 0x80, 0x72, 0x95, 0x7b, 0x49, 0xc5, 0x60, 0xa0, 0x57, 0x94, 0x0b, 0x65,
-	0xdb, 0x37, 0x35, 0x7a, 0x2c, 0x95, 0xc3, 0x90, 0x4e, 0xb3, 0xf4, 0xab, 0x5e, 0x23, 0x47, 0xdf,
-	0x28, 0x10, 0xed, 0xc3, 0x4e, 0x40, 0xc7, 0x44, 0x48, 0xab, 0xac, 0x93, 0xcc, 0x56, 0xe8, 0x00,
-	0xca, 0x01, 0x0d, 0x43, 0x15, 0x71, 0x25, 0x2f, 0x84, 0x61, 0x3f, 0xb0, 0xbf, 0x42, 0x73, 0x90,
-	0x4a, 0x95, 0x4e, 0x3e, 0x11, 0x4b, 0xad, 0x85, 0xe5, 0x56, 0xf4, 0x04, 0xaa, 0xa3, 0x29, 0x1b,
-	0x99, 0x29, 0x30, 0x13, 0x6f, 0xad, 0x4f, 0x41, 0x1e, 0xb3, 0x57, 0x19, 0x65, 0x5f, 0xf6, 0x29,
-	0xd4, 0x06, 0xa9, 0xf4, 0x88, 0x48, 0x58, 0x2c, 0x48, 0x16, 0x6c, 0xe1, 0x9a, 0x60, 0x11, 0x6c,
-	0x11, 0x26, 0xa6, 0x3a, 0xfc, 0x8a, 0xa7, 0xbf, 0xed, 0xf7, 0xf0, 0xef, 0x19, 0x15, 0x82, 0xc6,
-	0x63, 0x75, 0x82, 0xb8, 0xf1, 0xf4, 0x1e, 0x42, 0xc5, 0x68, 0x0e, 0xd4, 0x30, 0x29, 0xc3, 0xca,
-	0x5a, 0x58, 0x20, 0xec, 0x73, 0xf8, 0x6f, 0x95, 0x32, 0x13, 0x78, 0x1f, 0xf6, 0x22, 0x83, 0x0f,
-	0x73, 0x22, 0x4d, 0x5c, 0xf1, 0x76, 0x33, 0x3c, 0x1f, 0x75, 0xd4, 0x59, 0xb4, 0xae, 0x9d, 0xd2,
-	0x8c, 0x16, 0xd4, 0xfd, 0x40, 0x74, 0x7f, 0x15, 0x60, 0xfb, 0x54, 0x99, 0x84, 0xfa, 0xda, 0x8e,
-	0x4b, 0x0a, 0x7b, 0xdd, 0xc1, 0xab, 0xff, 0xd1, 0xd6, 0xfe, 0x95, 0x77, 0xe5, 0xb5, 0x7a, 0xe2,
-	0x50, 0x0f, 0xca, 0x59, 0x76, 0xe8, 0x68, 0x03, 0xcd, 0x52, 0xa8, 0x7f, 0xa4, 0xf8, 0x0c, 0xf5,
-	0x65, 0x13, 0xd0, 0x9d, 0x75, 0x9e, 0x0d, 0xae, 0xb7, 0xee, 0x5e, 0xdf, 0x64, 0x7c, 0x3c, 0x71,
-	0xbf, 0x3c, 0xb8, 0xc1, 0x8b, 0xae, 0x28, 0x9e, 0xe9, 0xdf, 0xd1, 0x8e, 0xd6, 0xf6, 0xe8, 0x77,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x8f, 0x9b, 0xe9, 0xe1, 0x53, 0x06, 0x00, 0x00,
+	// 843 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0xdf, 0x8f, 0xdb, 0x44,
+	0x10, 0x56, 0x92, 0xbb, 0x4b, 0x32, 0xf9, 0x71, 0xc7, 0x52, 0x5a, 0x37, 0x54, 0x6d, 0x64, 0x40,
+	0x0a, 0x12, 0xd8, 0xe2, 0xa0, 0x12, 0x12, 0x02, 0x71, 0xbd, 0x02, 0x8a, 0xd4, 0x8a, 0x63, 0x8b,
+	0x90, 0xe0, 0x25, 0x38, 0xeb, 0x75, 0xb2, 0xba, 0xd8, 0xeb, 0xdb, 0x59, 0x1f, 0xdc, 0x33, 0xff,
+	0x13, 0x2f, 0xfc, 0x73, 0x68, 0xd7, 0xeb, 0x24, 0x4e, 0xd2, 0x13, 0xbc, 0x44, 0xd9, 0x99, 0x6f,
+	0xbe, 0x9d, 0xf9, 0xe6, 0xb3, 0x0d, 0x8f, 0x54, 0xce, 0x42, 0x16, 0xb1, 0x25, 0x0f, 0x91, 0xab,
+	0x5b, 0xc1, 0x78, 0x90, 0x2b, 0xa9, 0x25, 0x19, 0x6a, 0x25, 0x6e, 0xef, 0x02, 0x9b, 0x0a, 0x6e,
+	0x3f, 0x1b, 0x3d, 0x5b, 0x48, 0xb9, 0x58, 0xf1, 0xd0, 0x66, 0xe7, 0x45, 0x12, 0x6a, 0x91, 0x72,
+	0xd4, 0x51, 0x9a, 0x97, 0x05, 0x23, 0xcf, 0x32, 0xc9, 0x34, 0x95, 0x59, 0x9d, 0x6a, 0xf4, 0xfe,
+	0x6e, 0x29, 0x4f, 0x73, 0x7d, 0x57, 0x26, 0xfd, 0xbf, 0x9b, 0xd0, 0xbf, 0x50, 0x5a, 0x24, 0x11,
+	0xd3, 0xd3, 0x2c, 0x91, 0xe4, 0x23, 0x18, 0x22, 0x5b, 0xf2, 0x34, 0x9a, 0xdd, 0x72, 0x85, 0x42,
+	0x66, 0x5e, 0x63, 0xdc, 0x98, 0x1c, 0xd3, 0x41, 0x19, 0xfd, 0xa5, 0x0c, 0x12, 0x1f, 0xfa, 0x91,
+	0x62, 0x4b, 0xa1, 0x39, 0xd3, 0x85, 0xe2, 0x5e, 0x73, 0xdc, 0x98, 0x74, 0x69, 0x2d, 0x46, 0xbe,
+	0x80, 0x36, 0x53, 0x3c, 0xd2, 0x3c, 0xf6, 0x5a, 0xe3, 0xc6, 0xa4, 0x77, 0x3e, 0x0a, 0xca, 0x56,
+	0x82, 0xaa, 0x95, 0xe0, 0xe7, 0x6a, 0x0a, 0x5a, 0x41, 0x4d, 0x03, 0xb1, 0x64, 0xd7, 0x5c, 0xad,
+	0x1b, 0x38, 0xb2, 0xdc, 0x83, 0x32, 0x5a, 0x35, 0x30, 0x84, 0xa6, 0x44, 0xef, 0xd8, 0xa6, 0x9a,
+	0x12, 0xc9, 0xb7, 0x70, 0xb6, 0x14, 0xa8, 0xa5, 0xba, 0x9b, 0xe5, 0x11, 0xbb, 0x8e, 0x16, 0x1c,
+	0xbd, 0x93, 0x71, 0x6b, 0xd2, 0x3b, 0x7f, 0x2f, 0x70, 0x5a, 0x5a, 0x71, 0x82, 0xab, 0x32, 0x4b,
+	0x4f, 0x1d, 0xdc, 0x9d, 0x91, 0x7c, 0x02, 0x27, 0xc8, 0x99, 0xe2, 0xda, 0x6b, 0xdb, 0x6e, 0x1f,
+	0xd4, 0xeb, 0xde, 0xd8, 0x1c, 0x75, 0x18, 0xff, 0x4f, 0x20, 0x57, 0x85, 0xae, 0xa4, 0xa3, 0xfc,
+	0xa6, 0xe0, 0xa8, 0xc9, 0x33, 0xe8, 0x45, 0x2e, 0x34, 0x13, 0xb1, 0x95, 0xae, 0x4b, 0xa1, 0x0a,
+	0x4d, 0x63, 0x72, 0x01, 0x83, 0x0d, 0x20, 0x4b, 0xa4, 0x15, 0xae, 0x77, 0xfe, 0x24, 0xa8, 0xef,
+	0x3b, 0xd8, 0xde, 0x89, 0x91, 0x75, 0x73, 0xf2, 0xff, 0x3a, 0x86, 0xce, 0x8b, 0x95, 0x9c, 0xff,
+	0x9f, 0x75, 0x8d, 0xad, 0x5a, 0xe5, 0x5d, 0x67, 0xf5, 0xb9, 0x7e, 0x7c, 0x63, 0xf5, 0xfb, 0x12,
+	0x40, 0xf1, 0x5c, 0xa2, 0x30, 0x9a, 0x78, 0x3d, 0x8b, 0xf4, 0xea, 0x48, 0xba, 0xce, 0xd3, 0x2d,
+	0x2c, 0xf9, 0x06, 0x06, 0x4e, 0x71, 0x3b, 0x11, 0x7a, 0x2d, 0x2b, 0xfb, 0xe3, 0x83, 0xb2, 0x97,
+	0xf3, 0xe4, 0x9b, 0x03, 0x92, 0xaf, 0xa1, 0x1f, 0xe5, 0xf9, 0x4a, 0xb0, 0x48, 0x0b, 0x99, 0xa1,
+	0x77, 0x74, 0xa8, 0xfc, 0x62, 0x83, 0xa0, 0x35, 0x38, 0x79, 0x05, 0xef, 0xa4, 0x02, 0x99, 0xcc,
+	0x12, 0xb1, 0x28, 0x94, 0xe3, 0xe8, 0x5a, 0x8e, 0xa7, 0x75, 0x8e, 0xd7, 0x3b, 0x30, 0xba, 0x5f,
+	0x68, 0x16, 0x28, 0xf3, 0xe8, 0xa6, 0xe0, 0xb3, 0x58, 0x28, 0xe3, 0xaf, 0x96, 0x59, 0x60, 0x19,
+	0x7a, 0x29, 0x14, 0x1a, 0xc1, 0xff, 0x30, 0x16, 0x97, 0x85, 0x9e, 0x25, 0x62, 0xe5, 0x5c, 0xd6,
+	0xa5, 0x83, 0x2a, 0xfa, 0xbd, 0x09, 0x92, 0x87, 0x70, 0x12, 0x8b, 0x05, 0xc7, 0xd2, 0x4c, 0x5d,
+	0xea, 0x4e, 0xe4, 0x11, 0xb4, 0x63, 0x91, 0x24, 0xc6, 0x1c, 0x9d, 0x2a, 0x91, 0x24, 0xd3, 0x98,
+	0xfc, 0x00, 0x67, 0xac, 0x40, 0x2d, 0xd3, 0x99, 0xe2, 0x28, 0x0b, 0xc5, 0x38, 0x7a, 0x60, 0xa7,
+	0x78, 0x52, 0x9f, 0xe2, 0xd2, 0xa2, 0xa8, 0x03, 0xd1, 0x53, 0x56, 0x3b, 0x23, 0x09, 0xa0, 0x5d,
+	0x5a, 0x14, 0xbd, 0xbe, 0xad, 0x3f, 0xec, 0xe3, 0x0a, 0x44, 0x9e, 0x43, 0x67, 0x25, 0x18, 0xcf,
+	0x90, 0xa3, 0x37, 0x38, 0x24, 0xfd, 0xab, 0x32, 0x6b, 0xe6, 0xa2, 0x6b, 0xa8, 0xff, 0x3b, 0x0c,
+	0xaf, 0x0a, 0x6d, 0x7c, 0x58, 0x79, 0x7f, 0x6b, 0xb4, 0x46, 0x6d, 0xb4, 0xe7, 0xd0, 0x9d, 0xaf,
+	0xe4, 0xbc, 0xf4, 0x7b, 0xab, 0xee, 0xac, 0xca, 0xef, 0x95, 0xa1, 0x69, 0x67, 0xee, 0xfe, 0xf9,
+	0x97, 0xd0, 0xbb, 0x2a, 0x34, 0xe5, 0x98, 0xcb, 0x0c, 0xb9, 0xb3, 0x70, 0xe3, 0x1e, 0x0b, 0x13,
+	0x38, 0xe2, 0x12, 0x57, 0xd6, 0xe6, 0x1d, 0x6a, 0xff, 0xfb, 0x3f, 0xc1, 0xbb, 0xaf, 0x05, 0xa2,
+	0xc8, 0x16, 0xe6, 0x06, 0xfc, 0xcf, 0xcf, 0xe9, 0x63, 0xe8, 0x94, 0x3d, 0xc7, 0xe6, 0xb1, 0x31,
+	0x0b, 0x6e, 0xdb, 0xc6, 0x62, 0xf4, 0xaf, 0xe1, 0x41, 0x9d, 0xd2, 0x35, 0xf8, 0x31, 0x9c, 0xa5,
+	0x65, 0x7c, 0x56, 0x11, 0x59, 0xe2, 0x0e, 0x3d, 0x75, 0xf1, 0xea, 0xa1, 0x26, 0x93, 0x0d, 0x74,
+	0xe7, 0x96, 0x61, 0xba, 0xa1, 0x36, 0x97, 0x85, 0x40, 0x5e, 0xf2, 0x15, 0xd7, 0xbc, 0xd6, 0xfe,
+	0x76, 0x77, 0x8d, 0x5a, 0x77, 0xe7, 0xff, 0x34, 0xe1, 0xf8, 0xd2, 0xa8, 0x4a, 0xa6, 0x56, 0xbf,
+	0xf5, 0x9d, 0xfe, 0xae, 0xe4, 0xfb, 0xaf, 0xaf, 0xd1, 0xc3, 0xbd, 0x17, 0xf4, 0x77, 0xe6, 0x5b,
+	0x41, 0x2e, 0xa0, 0xed, 0x96, 0x4d, 0x9e, 0x1e, 0xa0, 0xd9, 0x72, 0xc1, 0x5b, 0x29, 0x7e, 0x85,
+	0xfe, 0xb6, 0x6a, 0xe4, 0x83, 0x5d, 0x9e, 0x03, 0x6b, 0x1a, 0x7d, 0x78, 0x3f, 0xc8, 0x09, 0x3f,
+	0x85, 0xde, 0x96, 0x46, 0xfb, 0x83, 0xee, 0x0b, 0xf8, 0xb6, 0x2e, 0x5f, 0x84, 0xbf, 0x7d, 0xba,
+	0x10, 0x7a, 0x59, 0xcc, 0x8d, 0xb5, 0xc2, 0xe8, 0xa6, 0x88, 0x90, 0xb3, 0x42, 0x09, 0x7d, 0x17,
+	0x5a, 0xd2, 0x70, 0xfd, 0xbd, 0xfe, 0xca, 0xfe, 0xce, 0x4f, 0x2c, 0xc1, 0xe7, 0xff, 0x06, 0x00,
+	0x00, 0xff, 0xff, 0x60, 0x74, 0xd3, 0x39, 0xc9, 0x07, 0x00, 0x00,
 }
